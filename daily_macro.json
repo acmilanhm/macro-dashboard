@@ -14,16 +14,139 @@
       "date": "2026-08-07",
       "source": "Yahoo Finance"
     },
-    "BTC": {
-      "value": 64925,
-      "change_pct": 0.07,
-      "date": "2026-08-08",
-      "source": "Yahoo Finance"
-    },
     "WTI": {
       "value": 78.18,
       "change_pct": 1.15,
       "date": "2026-08-07",
+      "source": "Yahoo Finance"
+    },
+    "NASDAQ": {
+      "value": 20120.5,
+      "change_pct": 0.85,
+      "date": "2026-08-09",
+      "source": "Yahoo Finance (cached)"
+    }
+  },
+  "ai_stocks": {
+    "NVDA": {
+      "value": 138.5,
+      "change_pct": 2.35,
+      "date": "2026-08-07",
+      "name": "英伟达",
+      "source": "Yahoo Finance"
+    },
+    "AVGO": {
+      "value": 175.4,
+      "change_pct": 1.15,
+      "date": "2026-08-07",
+      "name": "博通",
+      "source": "Yahoo Finance"
+    },
+    "TSM": {
+      "value": 205.3,
+      "change_pct": 0.95,
+      "date": "2026-08-07",
+      "name": "台积电",
+      "source": "Yahoo Finance"
+    },
+    "ASML": {
+      "value": 890.2,
+      "change_pct": 0.72,
+      "date": "2026-08-07",
+      "name": "阿斯麦",
+      "source": "Yahoo Finance"
+    },
+    "MSFT": {
+      "value": 432.1,
+      "change_pct": 0.55,
+      "date": "2026-08-07",
+      "name": "微软",
+      "source": "Yahoo Finance"
+    },
+    "GOOGL": {
+      "value": 178.9,
+      "change_pct": -0.3,
+      "date": "2026-08-07",
+      "name": "谷歌",
+      "source": "Yahoo Finance"
+    },
+    "META": {
+      "value": 565.2,
+      "change_pct": 1.8,
+      "date": "2026-08-07",
+      "name": "Meta",
+      "source": "Yahoo Finance"
+    },
+    "AMZN": {
+      "value": 198.5,
+      "change_pct": 0.42,
+      "date": "2026-08-07",
+      "name": "亚马逊",
+      "source": "Yahoo Finance"
+    },
+    "AAPL": {
+      "value": 228.7,
+      "change_pct": -0.15,
+      "date": "2026-08-07",
+      "name": "苹果",
+      "source": "Yahoo Finance"
+    },
+    "PLTR": {
+      "value": 35.6,
+      "change_pct": 3.2,
+      "date": "2026-08-07",
+      "name": "Palantir",
+      "source": "Yahoo Finance"
+    },
+    "CRM": {
+      "value": 245.8,
+      "change_pct": 0.88,
+      "date": "2026-08-07",
+      "name": "Salesforce",
+      "source": "Yahoo Finance"
+    },
+    "NOW": {
+      "value": 890.5,
+      "change_pct": 1.22,
+      "date": "2026-08-07",
+      "name": "ServiceNow",
+      "source": "Yahoo Finance"
+    },
+    "AMD": {
+      "value": 162.2,
+      "change_pct": -0.82,
+      "date": "2026-08-07",
+      "name": "超微",
+      "source": "Yahoo Finance"
+    }
+  },
+  "ai_etfs": {
+    "SMH": {
+      "value": 245.3,
+      "change_pct": 1.45,
+      "date": "2026-08-07",
+      "name": "半导体ETF",
+      "source": "Yahoo Finance"
+    },
+    "BOTZ": {
+      "value": 32.8,
+      "change_pct": 0.65,
+      "date": "2026-08-07",
+      "name": "机器人AI ETF",
+      "source": "Yahoo Finance"
+    },
+    "IGV": {
+      "value": 88.9,
+      "change_pct": 0.35,
+      "date": "2026-08-07",
+      "name": "软件ETF",
+      "source": "Yahoo Finance"
+    },
+    "SOXX": {
+      "value": 235.6,
+      "change_pct": 1.25,
+      "date": "2026-08-07",
+      "name": "费城半导体ETF",
       "source": "Yahoo Finance"
     }
   },
@@ -73,13 +196,6 @@
       "url": "https://reddit.com/x",
       "score": 420,
       "created_utc": "2026-08-08T10:00:00+00:00"
-    },
-    {
-      "title": "Did someone burn 100 BTC?",
-      "source": "reddit_crypto",
-      "url": "https://reddit.com/y",
-      "score": 310,
-      "created_utc": "2026-08-08T11:00:00+00:00"
     }
   ],
   "research": {
@@ -127,62 +243,248 @@
       }
     ]
   },
-  "crypto": {
-    "binance": {
-      "source": "binance",
-      "mark_price": 64900,
-      "funding_rate": 0.00012,
-      "open_interest": 580000,
-      "next_funding_time": 123
+  "ai_radar": {
+    "supply_chain": {
+      "chips": [
+        {
+          "ticker": "NVDA",
+          "name": "英伟达",
+          "role": "芯片设计 (GPU/AI加速器)",
+          "segment": "设计",
+          "value": 138.5,
+          "change_pct": 2.35,
+          "date": "2026-08-07",
+          "data_available": true
+        },
+        {
+          "ticker": "AMD",
+          "name": "超微半导体",
+          "role": "芯片设计 (CPU/GPU)",
+          "segment": "设计",
+          "value": 162.2,
+          "change_pct": -0.82,
+          "date": "2026-08-07",
+          "data_available": true
+        },
+        {
+          "ticker": "AVGO",
+          "name": "博通",
+          "role": "芯片设计 (网络/定制ASIC)",
+          "segment": "设计",
+          "value": 175.4,
+          "change_pct": 1.15,
+          "date": "2026-08-07",
+          "data_available": true
+        },
+        {
+          "ticker": "TSM",
+          "name": "台积电",
+          "role": "芯片制造 (晶圆代工)",
+          "segment": "制造",
+          "value": 205.3,
+          "change_pct": 0.95,
+          "date": "2026-08-07",
+          "data_available": true
+        },
+        {
+          "ticker": "ASML",
+          "name": "阿斯麦",
+          "role": "半导体设备 (光刻机)",
+          "segment": "设备",
+          "value": 890.2,
+          "change_pct": 0.72,
+          "date": "2026-08-07",
+          "data_available": true
+        }
+      ],
+      "cloud": [
+        {
+          "ticker": "AMZN",
+          "name": "亚马逊",
+          "role": "云基础设施 (AWS)",
+          "segment": "AWS",
+          "value": 198.5,
+          "change_pct": 0.42,
+          "date": "2026-08-07",
+          "data_available": true
+        },
+        {
+          "ticker": "MSFT",
+          "name": "微软",
+          "role": "云基础设施 (Azure)",
+          "segment": "Azure",
+          "value": 432.1,
+          "change_pct": 0.55,
+          "date": "2026-08-07",
+          "data_available": true
+        },
+        {
+          "ticker": "GOOGL",
+          "name": "谷歌",
+          "role": "云基础设施 (GCP)",
+          "segment": "GCP",
+          "value": 178.9,
+          "change_pct": -0.3,
+          "date": "2026-08-07",
+          "data_available": true
+        }
+      ],
+      "models": [
+        {
+          "ticker": null,
+          "name": "OpenAI",
+          "role": "大模型 (GPT 系列)",
+          "segment": "私有",
+          "note": "私有公司，无公开股价",
+          "data_available": false
+        },
+        {
+          "ticker": null,
+          "name": "Anthropic",
+          "role": "大模型 (Claude 系列)",
+          "segment": "私有",
+          "note": "私有公司，无公开股价",
+          "data_available": false
+        },
+        {
+          "ticker": "GOOGL",
+          "name": "谷歌",
+          "role": "大模型 (Gemini)",
+          "segment": "上市",
+          "value": 178.9,
+          "change_pct": -0.3,
+          "date": "2026-08-07",
+          "data_available": true
+        },
+        {
+          "ticker": "META",
+          "name": "Meta",
+          "role": "大模型 (Llama)",
+          "segment": "上市",
+          "value": 565.2,
+          "change_pct": 1.8,
+          "date": "2026-08-07",
+          "data_available": true
+        }
+      ],
+      "applications": [
+        {
+          "ticker": "PLTR",
+          "name": "Palantir",
+          "role": "AI 数据分析平台",
+          "segment": "应用",
+          "value": 35.6,
+          "change_pct": 3.2,
+          "date": "2026-08-07",
+          "data_available": true
+        },
+        {
+          "ticker": "CRM",
+          "name": "Salesforce",
+          "role": "AI CRM / SaaS",
+          "segment": "应用",
+          "value": 245.8,
+          "change_pct": 0.88,
+          "date": "2026-08-07",
+          "data_available": true
+        },
+        {
+          "ticker": "NOW",
+          "name": "ServiceNow",
+          "role": "AI IT 服务管理",
+          "segment": "应用",
+          "value": 890.5,
+          "change_pct": 1.22,
+          "date": "2026-08-07",
+          "data_available": true
+        },
+        {
+          "ticker": "FIG",
+          "name": "Figma",
+          "role": "AI 设计工具",
+          "segment": "应用",
+          "data_available": false
+        }
+      ]
     },
-    "bybit": {
-      "source": "bybit",
-      "funding_rate": 0.0001,
-      "last_price": 64880,
-      "open_interest": 120000,
-      "next_funding_time": 124
+    "news_flow": [],
+    "earnings_signals": {
+      "median_change_pct": 0.88,
+      "mean_change_pct": 0.92,
+      "up_count": 10,
+      "down_count": 3,
+      "total": 13,
+      "up_ratio": 0.77,
+      "leaders": [
+        {
+          "ticker": "PLTR",
+          "name": "Palantir",
+          "change_pct": 3.2
+        },
+        {
+          "ticker": "NVDA",
+          "name": "英伟达",
+          "change_pct": 2.35
+        },
+        {
+          "ticker": "META",
+          "name": "Meta",
+          "change_pct": 1.8
+        }
+      ],
+      "laggers": [
+        {
+          "ticker": "AMD",
+          "name": "超微",
+          "change_pct": -0.82
+        },
+        {
+          "ticker": "GOOGL",
+          "name": "谷歌",
+          "change_pct": -0.3
+        },
+        {
+          "ticker": "AAPL",
+          "name": "苹果",
+          "change_pct": -0.15
+        }
+      ],
+      "verdict": "AI 板块温和偏多，涨跌互现"
     },
-    "deribit": {
-      "source": "deribit",
-      "dvol": 58.4,
-      "put_oi": 8500,
-      "call_oi": 11800,
-      "put_call_ratio": 0.719,
-      "total_options_oi": 20300,
-      "perp_funding_8h": 8e-05,
-      "perp_oi": 12000
-    },
-    "etfs": [
-      {
-        "ticker": "IBIT",
-        "issuer": "BlackRock",
-        "price": 58.2,
-        "volume": 25000000,
-        "change_pct": 0.15,
-        "date": "2026-08-08",
-        "source": "Yahoo Finance"
+    "investment_implications": {
+      "supply_chain_health": "中",
+      "capital_flow": "均衡",
+      "strongest_layer": "applications",
+      "weakest_layer": "cloud",
+      "layer_summary": {
+        "chips": {
+          "avg_change_pct": 0.87,
+          "up": 4,
+          "down": 1,
+          "total": 5
+        },
+        "cloud": {
+          "avg_change_pct": 0.22,
+          "up": 2,
+          "down": 1,
+          "total": 3
+        },
+        "models": {
+          "avg_change_pct": 0.75,
+          "up": 1,
+          "down": 1,
+          "total": 2
+        },
+        "applications": {
+          "avg_change_pct": 1.77,
+          "up": 3,
+          "down": 0,
+          "total": 3
+        }
       },
-      {
-        "ticker": "FBTC",
-        "issuer": "Fidelity",
-        "price": 61.0,
-        "volume": 8000000,
-        "change_pct": 0.1,
-        "date": "2026-08-08",
-        "source": "Yahoo Finance"
-      }
-    ],
-    "market_quality": {
-      "funding_rate_8h": 0.00012,
-      "funding_heat": "warm",
-      "leverage_direction": "bullish",
-      "dvol": 58.4,
-      "dvol_regime": "normal",
-      "put_call_ratio": 0.719,
-      "options_positioning": "balanced",
-      "verdict_24h": "衍生品结构偏多，短线动能健康",
-      "verdict_1_7d": "中期偏多，资金费率与期权定位支撑",
-      "timestamp": "2026-08-09T00:50:12.052905+00:00"
+      "verdict_24h": "AI 产业链分化，资金流向均衡。涨跌互现，短线震荡为主。",
+      "verdict_1_7d": "中期温和偏多，产业链整体健康。资金稳步流入，有望延续上行趋势。",
+      "timestamp": "2026-08-09T04:06:55.741698+00:00"
     }
   },
   "judgment": {
