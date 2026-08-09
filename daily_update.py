@@ -84,27 +84,16 @@ def run_collector():
         os.chdir(old_cwd)
 
 
-def upload_to_github():
-    """通过 GitHub API 上传 daily_macro.json。"""
-    if not GH_TOKEN:
-        log("[ERROR] 未设置 GH_TOKEN，无法上传到 GitHub")
+def _upload_file_to_github(file_path: str, local_path: Path, headers: dict) -> bool:
+    """上传单个文件到 GitHub（内部辅助函数）。"""
+    if not local_path.exists():
+        log(f"[WARN] 文件不存在: {local_path}")
         return False
 
-    if not DATA_FILE.exists():
-        log("[ERROR] daily_macro.json 不存在，无法上传")
-        return False
-
-    headers = {
-        "Authorization": f"token {GH_TOKEN}",
-        "Accept": "application/vnd.github+json",
-    }
-
-    # 读取文件内容
-    with open(DATA_FILE, "rb") as f:
+    with open(local_path, "rb") as f:
         content = base64.b64encode(f.read()).decode()
 
     # 检查文件是否已存在（获取 sha）
-    file_path = "daily_macro.json"
     sha = None
     r = requests.get(
         f"{GH_API}/repos/{GH_OWNER}/{GH_REPO}/contents/{file_path}",
@@ -113,13 +102,9 @@ def upload_to_github():
     )
     if r.status_code == 200:
         sha = r.json().get("sha")
-        log(f"文件已存在，将更新 (sha: {sha[:8]}...)")
-    else:
-        log("文件不存在，将创建新文件")
 
-    # 上传
     body = {
-        "message": f"chore: daily macro update {time.strftime('%Y-%m-%d')}",
+        "message": f"chore: update {file_path} {time.strftime('%Y-%m-%d')}",
         "content": content,
     }
     if sha:
@@ -133,15 +118,56 @@ def upload_to_github():
     )
 
     if r.status_code in (200, 201):
-        log(f"上传成功! ({r.status_code})")
+        log(f"  上传成功: {file_path} ({r.status_code})")
         return True
     else:
-        log(f"上传失败: {r.status_code} {r.text[:200]}")
+        log(f"  上传失败: {file_path} {r.status_code} {r.text[:200]}")
         return False
 
 
+def upload_to_github():
+    """通过 GitHub API 上传 daily_macro.json 和历史数据文件。"""
+    if not GH_TOKEN:
+        log("[ERROR] 未设置 GH_TOKEN，无法上传到 GitHub")
+        return False
+
+    if not DATA_FILE.exists():
+        log("[ERROR] daily_macro.json 不存在，无法上传")
+        return False
+
+    headers = {
+        "Authorization": f"token {GH_TOKEN}",
+        "Accept": "application/vnd.github+json",
+    }
+
+    log("上传 daily_macro.json...")
+    success = _upload_file_to_github("daily_macro.json", DATA_FILE, headers)
+
+    # 上传今日历史数据文件
+    history_dir = PROJECT_DIR / "data" / "history"
+    if history_dir.exists():
+        today_str = time.strftime("%Y-%m-%d")
+        history_file = history_dir / f"{today_str}.json"
+        if history_file.exists():
+            log(f"上传历史数据 {history_file.name}...")
+            _upload_file_to_github(
+                f"data/history/{history_file.name}", history_file, headers
+            )
+        else:
+            # 尝试找到最新的历史文件
+            history_files = sorted(history_dir.glob("*.json"), reverse=True)
+            if history_files:
+                latest = history_files[0]
+                log(f"上传最新历史数据 {latest.name}...")
+                _upload_file_to_github(
+                    f"data/history/{latest.name}", latest, headers
+                )
+
+    return success
+
+
 def check_data_quality() -> bool:
-    """检查采集到的数据是否有效（至少有价格或宏观数据）。"""
+    """检查采集到的数据是否有效（至少有价格、宏观或 AI 股票数据）。"""
     if not DATA_FILE.exists():
         return False
     try:
@@ -150,9 +176,10 @@ def check_data_quality() -> bool:
         n_prices = len(data.get("prices", {}))
         n_macro = len(data.get("macro", {}))
         n_events = len(data.get("events", []))
-        log(f"数据质量: 价格{n_prices}项 宏观{n_macro}项 事件{n_events}条")
-        # 至少要有价格或宏观数据才算有效
-        if n_prices > 0 or n_macro > 0:
+        n_ai_stocks = len(data.get("ai_stocks", {}))
+        log(f"数据质量: 价格{n_prices}项 宏观{n_macro}项 AI股票{n_ai_stocks}只 事件{n_events}条")
+        # 至少要有价格、宏观或 AI 股票数据才算有效
+        if n_prices > 0 or n_macro > 0 or n_ai_stocks > 0:
             return True
         log("[WARN] 采集数据为空（可能 API 限流/网络问题）")
         return False
