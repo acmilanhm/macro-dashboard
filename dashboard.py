@@ -10,12 +10,12 @@ import streamlit as st
 
 DATA_FILE = "daily_macro.json"
 
-# ---- 数据源超链接映射 ----
+# ---- 数据源超链接映射（全部使用内地可访问的网站）----
 PRICE_LINKS = {
-    "SP500": ("https://finance.yahoo.com/quote/%5EGSPC", "Yahoo Finance"),
-    "DXY":   ("https://finance.yahoo.com/quote/DX-Y.NYB", "Yahoo Finance"),
-    "BTC":   ("https://finance.yahoo.com/quote/BTC-USD", "Yahoo Finance"),
-    "WTI":   ("https://finance.yahoo.com/quote/CL=F", "Yahoo Finance"),
+    "SP500": ("https://cn.investing.com/indices/us-spx-500", "英为财情"),
+    "DXY":   ("https://cn.investing.com/indices/usdollar-index", "英为财情"),
+    "BTC":   ("https://www.feixiaohao.com/currencies/bitcoin/", "非小号"),
+    "WTI":   ("https://cn.investing.com/commodities/crude-oil", "英为财情"),
 }
 
 MACRO_LINKS = {
@@ -29,26 +29,26 @@ MACRO_LINKS = {
 }
 
 CRYPTO_LINKS = {
-    "binance": ("https://www.binance.com/en/futures/BTCUSDT", "Binance 永续"),
-    "bybit":   ("https://www.bybit.com/trade/usdt/BTCUSDT", "Bybit 永续"),
-    "deribit": ("https://www.deribit.com/options/BTC", "Deribit 期权/DVOL"),
+    "binance": ("https://www.feixiaohao.com/currencies/bitcoin/", "非小号(BTC)"),
+    "bybit":   ("https://www.feixiaohao.com/contract/bitcoin/", "非小号(合约)"),
+    "deribit": ("https://cn.investing.com/crypto/bitcoin", "英为财情(BTC)"),
 }
 
-# ---- 外部资源链接 ----
+# ---- 外部资源链接（全部内地可访问）----
 EXTERNAL_RESOURCES = [
-    ("Yahoo Finance", "https://finance.yahoo.com", "股票/指数/加密货币价格"),
-    ("FRED 经济数据", "https://fred.stlouisfed.org", "美联储经济数据库"),
-    ("Cboe VIX", "https://www.cboe.com/tradable_products/vix/", "VIX 历史数据"),
+    ("英为财情", "https://cn.investing.com", "全球指数/外汇/商品/加密货币行情"),
+    ("东方财富网", "https://www.eastmoney.com", "A股/美股/基金综合财经门户"),
+    ("新浪财经", "https://finance.sina.com.cn", "美股/A股/期货实时行情"),
+    ("雪球", "https://xueqiu.com", "投资社区/美股讨论"),
+    ("华尔街见闻", "https://wallstreetcn.com", "全球宏观资讯快讯"),
+    ("金十数据", "https://www.jin10.com", "财经日历/实时快讯"),
+    ("FRED 经济数据", "https://fred.stlouisfed.org", "美联储经济数据库(可访问)"),
     ("美国财政部", "https://home.treasury.gov", "国债收益率曲线"),
     ("美联储 H.4.1", "https://www.federalreserve.gov/releases/h41/", "美联储资产负债表"),
-    ("Binance", "https://www.binance.com", "加密永续合约数据"),
-    ("Deribit", "https://www.deribit.com", "BTC 期权/DVOL"),
-    ("Reddit r/wallstreetbets", "https://www.reddit.com/r/wallstreetbets", "市场情绪事件流"),
-    ("Reddit r/stocks", "https://www.reddit.com/r/stocks", "股票讨论"),
-    ("Reddit r/CryptoCurrency", "https://www.reddit.com/r/CryptoCurrency", "加密货币讨论"),
-    ("MarketBeat", "https://www.marketbeat.com", "分析师评级聚合"),
-    ("TradingView", "https://www.tradingview.com", "图表分析工具"),
-    ("CoinGlass", "https://www.coinglass.com", "加密衍生品聚合"),
+    ("非小号", "https://www.feixiaohao.com", "加密货币行情/合约数据"),
+    ("CoinGlass", "https://www.coinglass.com", "加密衍生品聚合(可能需确认)"),
+    ("同花顺", "https://www.10jqka.com.cn", "A股/美股行情分析"),
+    ("Gitee 代码仓库", "https://gitee.com", "国内代码托管平台"),
     ("timsun.net", "https://timsun.net/", "参考网站（原始灵感来源）"),
 ]
 
@@ -193,7 +193,7 @@ def main():
         c3.metric("Put/Call OI", mq.get("put_call_ratio", "?"),
                   mq.get("options_positioning", ""))
         bn = crypto.get("binance", {})
-        c4.metric("Binance OI", bn.get("open_interest", "?"))
+        c4.metric("BTC 持仓量", bn.get("open_interest", "?"))
 
         st.info(f"**24h 判断：** {mq.get('verdict_24h','')}  \n"
                 f"**1-7d 判断：** {mq.get('verdict_1_7d','')}")
@@ -214,32 +214,32 @@ def main():
         # Deribit 期权数据
         der = crypto.get("deribit", {})
         if der and "error" not in der:
-            st.markdown("**Deribit 期权数据**")
+            st.markdown("**BTC 期权数据**")
             md = "| DVOL | Put OI | Call OI | Put/Call | 总期权OI | 永续资金(8h) | 链接 |\n"
             md += "|------|--------|---------|----------|----------|-------------|------|\n"
             md += (f"| {der.get('dvol','—')} | {der.get('put_oi','—')} | {der.get('call_oi','—')} | "
                    f"{der.get('put_call_ratio','—')} | {der.get('total_options_oi','—')} | "
                    f"{der.get('perp_funding_8h','—')} | "
-                   f"[Deribit →](https://www.deribit.com/options/BTC) |\n")
+                   f"[英为财情 →](https://cn.investing.com/crypto/bitcoin) |\n")
             st.markdown(md)
 
         # BTC 现货 ETF
         etfs = crypto.get("etfs", [])
         if etfs:
             st.markdown("**BTC 现货 ETF**")
-            md = "| 代码 | 发行商 | 价格 | 成交量 | 涨跌% | 日期 | Yahoo链接 |\n"
+            md = "| 代码 | 发行商 | 价格 | 成交量 | 涨跌% | 日期 | 行情链接 |\n"
             md += "|------|--------|------|--------|-------|------|-----------|\n"
             for e in etfs:
                 ticker = e.get("ticker", "—")
                 md += (f"| {ticker} | {e.get('issuer','—')} | {e.get('price','—')} | "
                        f"{e.get('volume','—')} | {fmt_chg(e.get('change_pct'))} | "
                        f"{e.get('date','—')} | "
-                       f"[查看 →](https://finance.yahoo.com/quote/{ticker}) |\n")
+                       f"[查看 →](https://cn.investing.com/etf/{ticker.lower()}) |\n")
             st.markdown(md)
     else:
         st.caption("今日无加密衍生品数据（API 超时）"
-                   f"  ·  可手动查看 [Binance](https://www.binance.com) | "
-                   f"[Deribit](https://www.deribit.com) | "
+                   f"  ·  可手动查看 [非小号](https://www.feixiaohao.com) | "
+                   f"[英为财情](https://cn.investing.com/crypto/bitcoin) | "
                    f"[CoinGlass](https://www.coinglass.com)")
 
     st.divider()
@@ -274,16 +274,16 @@ def main():
         st.markdown(md)
     else:
         st.caption("今日无结构化研报  ·  可手动查看 "
-                   f"[MarketBeat](https://www.marketbeat.com) | "
-                   f"[TipRanks](https://www.tipranks.com)")
+                   f"[华尔街见闻](https://wallstreetcn.com) | "
+                   f"[东方财富](https://www.eastmoney.com)")
 
     st.divider()
 
     # =========================================================================
-    # 6. 市场事件流 (Reddit) - 确保链接可点击
+    # 6. 市场事件流 - 确保链接可点击
     # =========================================================================
     events = data.get("events", [])
-    st.subheader(f"市场事件流 (Reddit) - {len(events)} 条")
+    st.subheader(f"市场事件流 - {len(events)} 条")
     if events:
         for e in events:
             title = e.get("title", "")
@@ -292,9 +292,9 @@ def main():
             score = e.get("score", 0)
             created = e.get("created_utc", "")[:10]
             source_link_map = {
-                "reddit_equities": ("r/stocks", "https://www.reddit.com/r/stocks"),
-                "reddit_crypto": ("r/CryptoCurrency", "https://www.reddit.com/r/CryptoCurrency"),
-                "reddit_wsb": ("r/wallstreetbets", "https://www.reddit.com/r/wallstreetbets"),
+                "reddit_equities": ("雪球/股票", "https://xueqiu.com"),
+                "reddit_crypto": ("非小号/加密", "https://www.feixiaohao.com"),
+                "reddit_wsb": ("华尔街见闻", "https://wallstreetcn.com"),
             }
             sub_name, sub_link = source_link_map.get(source, (source, url))
             if url and url != "https://reddit.com/x" and url != "https://reddit.com/y":
@@ -305,9 +305,9 @@ def main():
                             f"`{score} pts` · {created}")
     else:
         st.caption("今日无事件流  ·  可手动查看 "
-                   f"[r/wallstreetbets](https://www.reddit.com/r/wallstreetbets) | "
-                   f"[r/stocks](https://www.reddit.com/r/stocks) | "
-                   f"[r/CryptoCurrency](https://www.reddit.com/r/CryptoCurrency)")
+                   f"[华尔街见闻](https://wallstreetcn.com) | "
+                   f"[雪球](https://xueqiu.com) | "
+                   f"[金十数据](https://www.jin10.com)")
 
     st.divider()
 
@@ -378,8 +378,9 @@ def main():
     # 底部信息
     st.divider()
     st.caption(
-        "本仪表盘数据自动采集自 Yahoo Finance、FRED、Reddit、Binance、Deribit 等公开数据源。  \n"
+        "本仪表盘数据自动采集自公开数据源，展示链接均使用内地可访问网站。  \n"
         "每日北京时间 07:00 自动更新（周一至周五）。"
+        f"  ·  [Gitee 仓库](https://gitee.com)"
         f"  ·  [GitHub 仓库](https://github.com/acmilanhm/macro-dashboard)"
         f"  ·  [参考网站 timsun.net](https://timsun.net/)"
     )
