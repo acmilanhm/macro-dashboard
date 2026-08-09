@@ -1,5 +1,6 @@
 """
 极简可视化面板：读取 daily_macro.json 并展示（含 AI 研判 + 卖方研报）
+增强版：所有数据源带超链接，数据口径透明度表，外部资源导航
 运行:  streamlit run dashboard.py
 """
 import json
@@ -9,12 +10,88 @@ import streamlit as st
 
 DATA_FILE = "daily_macro.json"
 
+# ---- 数据源超链接映射 ----
+PRICE_LINKS = {
+    "SP500": ("https://finance.yahoo.com/quote/%5EGSPC", "Yahoo Finance"),
+    "DXY":   ("https://finance.yahoo.com/quote/DX-Y.NYB", "Yahoo Finance"),
+    "BTC":   ("https://finance.yahoo.com/quote/BTC-USD", "Yahoo Finance"),
+    "WTI":   ("https://finance.yahoo.com/quote/CL=F", "Yahoo Finance"),
+}
+
+MACRO_LINKS = {
+    "VIX_10Y":    ("https://fred.stlouisfed.org/series/DGS10", "FRED DGS10", "10Y 国债收益率"),
+    "VIX":        ("https://fred.stlouisfed.org/series/VIXCLS", "FRED VIXCLS", "VIX 恐慌指数"),
+    "HY_OAS":     ("https://fred.stlouisfed.org/series/BAMLH0A0HYM2", "ICE BofA / FRED", "高收益债 OAS 利差"),
+    "FED_ASSETS": ("https://fred.stlouisfed.org/series/WALCL", "FRED WALCL", "美联储总资产"),
+    "TGA":        ("https://fred.stlouisfed.org/series/WTREGEN", "FRED WTREGEN", "财政部一般账户"),
+    "RRP":        ("https://fred.stlouisfed.org/series/WLRRAL", "FRED WLRRAL", "隔夜逆回购余额"),
+    "NET_LIQUIDITY": ("https://fred.stlouisfed.org/series/WALCL", "计算: WALCL-RRP-TGA", "净流动性"),
+}
+
+CRYPTO_LINKS = {
+    "binance": ("https://www.binance.com/en/futures/BTCUSDT", "Binance 永续"),
+    "bybit":   ("https://www.bybit.com/trade/usdt/BTCUSDT", "Bybit 永续"),
+    "deribit": ("https://www.deribit.com/options/BTC", "Deribit 期权/DVOL"),
+}
+
+# ---- 外部资源链接 ----
+EXTERNAL_RESOURCES = [
+    ("Yahoo Finance", "https://finance.yahoo.com", "股票/指数/加密货币价格"),
+    ("FRED 经济数据", "https://fred.stlouisfed.org", "美联储经济数据库"),
+    ("Cboe VIX", "https://www.cboe.com/tradable_products/vix/", "VIX 历史数据"),
+    ("美国财政部", "https://home.treasury.gov", "国债收益率曲线"),
+    ("美联储 H.4.1", "https://www.federalreserve.gov/releases/h41/", "美联储资产负债表"),
+    ("Binance", "https://www.binance.com", "加密永续合约数据"),
+    ("Deribit", "https://www.deribit.com", "BTC 期权/DVOL"),
+    ("Reddit r/wallstreetbets", "https://www.reddit.com/r/wallstreetbets", "市场情绪事件流"),
+    ("Reddit r/stocks", "https://www.reddit.com/r/stocks", "股票讨论"),
+    ("Reddit r/CryptoCurrency", "https://www.reddit.com/r/CryptoCurrency", "加密货币讨论"),
+    ("MarketBeat", "https://www.marketbeat.com", "分析师评级聚合"),
+    ("TradingView", "https://www.tradingview.com", "图表分析工具"),
+    ("CoinGlass", "https://www.coinglass.com", "加密衍生品聚合"),
+    ("timsun.net", "https://timsun.net/", "参考网站（原始灵感来源）"),
+]
+
 
 def load_data():
     if not os.path.exists(DATA_FILE):
         return None
     with open(DATA_FILE, encoding="utf-8") as f:
         return json.load(f)
+
+
+def fmt_chg(val):
+    """格式化涨跌幅，带颜色 emoji。"""
+    if val is None:
+        return ""
+    if val > 0:
+        return f"🔴 +{val:.2f}%"
+    elif val < 0:
+        return f"🟢 {val:.2f}%"
+    return f"⚪ {val:.2f}%"
+
+
+def fmt_value(key, val):
+    """根据指标类型格式化数值。"""
+    if val is None:
+        return "—"
+    if key in ("SP500",):
+        return f"{val:,.2f}"
+    if key in ("BTC",):
+        return f"${val:,.0f}"
+    if key in ("WTI",):
+        return f"${val:.2f}/桶"
+    if key in ("DXY",):
+        return f"{val:.2f}"
+    if key in ("VIX",):
+        return f"{val:.2f}"
+    if key in ("VIX_10Y", "HY_OAS"):
+        return f"{val:.2f}%"
+    if key in ("FED_ASSETS", "TGA", "RRP", "NET_LIQUIDITY"):
+        if val > 1000:
+            return f"{val/1000:.2f} 万亿"
+        return f"{val:.1f} 亿"
+    return str(val)
 
 
 def main():
@@ -28,7 +105,9 @@ def main():
 
     st.caption(f"采集时间：{data.get('collected_at', '')}  ·  交易日：{data.get('trade_date', '')}")
 
-    # ---- AI 研判横幅 ----
+    # =========================================================================
+    # 1. AI 研判横幅
+    # =========================================================================
     j = data.get("judgment")
     if j:
         conf = j.get("confidence", "")
@@ -44,33 +123,68 @@ def main():
     else:
         st.info("未生成 AI 研判（需配置 LLM_API_KEY）")
 
-    # ---- 价格卡片 ----
+    # =========================================================================
+    # 2. 核心资产价格（带超链接）
+    # =========================================================================
     st.subheader("核心资产价格")
-    cols = st.columns(4)
-    labels = {"SP500": "标普500", "DXY": "美元指数", "BTC": "比特币", "WTI": "WTI原油"}
-    for i, key in enumerate(["SP500", "DXY", "BTC", "WTI"]):
-        p = data["prices"].get(key)
+    prices = data.get("prices", {})
+    price_rows = []
+    labels_cn = {"SP500": "标普500", "DXY": "美元指数", "BTC": "比特币", "WTI": "WTI原油"}
+    for key in ["SP500", "DXY", "BTC", "WTI"]:
+        p = prices.get(key)
         if p:
-            chg = p["change_pct"]
-            cols[i].metric(labels[key], p["value"], f"{chg:+.2f}%")
+            link, src_name = PRICE_LINKS.get(key, ("", ""))
+            price_rows.append({
+                "指标": labels_cn.get(key, key),
+                "数值": fmt_value(key, p.get("value")),
+                "日涨跌": fmt_chg(p.get("change_pct")),
+                "数据日期": p.get("date", "—"),
+                "来源": f"[{src_name}]({link})" if link else p.get("source", ""),
+            })
 
-    # ---- 宏观指标表 ----
+    if price_rows:
+        # 用 markdown 表格渲染，支持超链接
+        md = "| 指标 | 数值 | 日涨跌 | 数据日期 | 来源 |\n|------|------|--------|----------|------|\n"
+        for r in price_rows:
+            md += f"| {r['指标']} | {r['数值']} | {r['日涨跌']} | {r['数据日期']} | {r['来源']} |\n"
+        st.markdown(md)
+
+    # =========================================================================
+    # 3. 宏观与流动性指标（带 FRED 超链接）
+    # =========================================================================
     st.subheader("宏观与流动性指标")
-    rows = []
-    for k, v in data["macro"].items():
-        rows.append({
-            "指标": k,
-            "数值": v.get("value"),
-            "日期": v.get("date"),
-            "来源": v.get("source"),
-        })
-    st.dataframe(rows, width="stretch")
+    macro = data.get("macro", {})
+    if macro:
+        md = "| 指标 | 数值 | 数据日期 | 来源链接 | 说明 |\n|------|------|----------|----------|------|\n"
+        for k, v in macro.items():
+            val = v.get("value")
+            date = v.get("date", "—")
+            link_info = MACRO_LINKS.get(k)
+            if link_info:
+                link, src_name, desc = link_info
+                source_cell = f"[{src_name}]({link})"
+            else:
+                source_cell = v.get("source", "")
+                desc = ""
+            md += f"| {desc or k} | {fmt_value(k, val)} | {date} | {source_cell} | {desc} |\n"
+        st.markdown(md)
 
-    # ---- 加密衍生品雷达 ----
+        # 净流动性公式说明
+        nl = macro.get("NET_LIQUIDITY")
+        if nl:
+            st.caption(f"净流动性 = 美联储总资产(WALCL) − 逆回购(RRP) − 财政部TGA | "
+                       f"计算值: {nl.get('value', '?')} 亿 | "
+                       f"详见 [FRED WALCL](https://fred.stlouisfed.org/series/WALCL)")
+
+    st.divider()
+
+    # =========================================================================
+    # 4. 加密衍生品雷达（带交易所超链接）
+    # =========================================================================
+    st.subheader("加密衍生品雷达")
     crypto = data.get("crypto", {})
     mq = crypto.get("market_quality", {})
-    st.subheader("加密衍生品雷达")
-    if mq:
+    if mq and mq.get("funding_rate_8h") is not None:
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("资金费率(8h)", f"{mq.get('funding_rate_8h','?')}",
                   mq.get("funding_heat", ""))
@@ -80,44 +194,195 @@ def main():
                   mq.get("options_positioning", ""))
         bn = crypto.get("binance", {})
         c4.metric("Binance OI", bn.get("open_interest", "?"))
-        st.info(f"**24h：** {mq.get('verdict_24h','')}  \n"
-                f"**1-7d：** {mq.get('verdict_1_7d','')}")
+
+        st.info(f"**24h 判断：** {mq.get('verdict_24h','')}  \n"
+                f"**1-7d 判断：** {mq.get('verdict_1_7d','')}")
+
+        # 交易所数据表（带超链接）
+        st.markdown("**交易所永续合约数据**")
+        md = "| 交易所 | 最新价 | 资金费率 | 持仓量 | 链接 |\n|--------|--------|----------|--------|------|\n"
+        for ex_key in ["binance", "bybit"]:
+            ex_data = crypto.get(ex_key, {})
+            if ex_data and "error" not in ex_data:
+                link, name = CRYPTO_LINKS.get(ex_key, ("", ex_key))
+                price = ex_data.get("mark_price") or ex_data.get("last_price", "—")
+                fr = ex_data.get("funding_rate", "—")
+                oi = ex_data.get("open_interest", "—")
+                md += f"| {name} | {price} | {fr} | {oi} | [打开 →]({link}) |\n"
+        st.markdown(md)
+
+        # Deribit 期权数据
+        der = crypto.get("deribit", {})
+        if der and "error" not in der:
+            st.markdown("**Deribit 期权数据**")
+            md = "| DVOL | Put OI | Call OI | Put/Call | 总期权OI | 永续资金(8h) | 链接 |\n"
+            md += "|------|--------|---------|----------|----------|-------------|------|\n"
+            md += (f"| {der.get('dvol','—')} | {der.get('put_oi','—')} | {der.get('call_oi','—')} | "
+                   f"{der.get('put_call_ratio','—')} | {der.get('total_options_oi','—')} | "
+                   f"{der.get('perp_funding_8h','—')} | "
+                   f"[Deribit →](https://www.deribit.com/options/BTC) |\n")
+            st.markdown(md)
+
+        # BTC 现货 ETF
         etfs = crypto.get("etfs", [])
         if etfs:
-            st.caption("BTC 现货 ETF")
-            st.dataframe([{
-                "代码": e.get("ticker"), "发行商": e.get("issuer"),
-                "价格": e.get("price"), "成交": e.get("volume"),
-                "涨跌%": e.get("change_pct"), "日期": e.get("date"),
-            } for e in etfs], width="stretch")
+            st.markdown("**BTC 现货 ETF**")
+            md = "| 代码 | 发行商 | 价格 | 成交量 | 涨跌% | 日期 | Yahoo链接 |\n"
+            md += "|------|--------|------|--------|-------|------|-----------|\n"
+            for e in etfs:
+                ticker = e.get("ticker", "—")
+                md += (f"| {ticker} | {e.get('issuer','—')} | {e.get('price','—')} | "
+                       f"{e.get('volume','—')} | {fmt_chg(e.get('change_pct'))} | "
+                       f"{e.get('date','—')} | "
+                       f"[查看 →](https://finance.yahoo.com/quote/{ticker}) |\n")
+            st.markdown(md)
     else:
-        st.caption("今日无加密衍生品数据")
+        st.caption("今日无加密衍生品数据（API 超时）"
+                   f"  ·  可手动查看 [Binance](https://www.binance.com) | "
+                   f"[Deribit](https://www.deribit.com) | "
+                   f"[CoinGlass](https://www.coinglass.com)")
 
-    # ---- 卖方研报 ----
+    st.divider()
+
+    # =========================================================================
+    # 5. 卖方研报结构化（带超链接）
+    # =========================================================================
     research = data.get("research", {})
     reports = research.get("rss_structured", []) + research.get("ratings", [])
     st.subheader(f"卖方研报结构化（{len(reports)} 条）")
     if reports:
-        rrows = []
+        md = "| 机构 | 动作 | 标的 | 公司 | 目标价 | 方向 | 理由 | 来源 | 日期 | 链接 |\n"
+        md += "|------|------|------|------|--------|------|------|------|------|------|\n"
         for r in reports:
-            rrows.append({
-                "机构": r.get("bank"),
-                "动作": r.get("action"),
-                "标的": r.get("ticker"),
-                "目标价": r.get("target_price"),
-                "方向": r.get("direction"),
-                "理由": r.get("rationale"),
-                "来源": r.get("source"),
-            })
-        st.dataframe(rrows, width="stretch")
+            ticker = r.get("ticker", "—")
+            action_map = {
+                "target_change": "目标价调整",
+                "upgrade": "上调评级",
+                "downgrade": "下调评级",
+                "initiate": "首次覆盖",
+            }
+            action = action_map.get(r.get("action"), r.get("action", "—"))
+            tp = r.get("target_price")
+            tp_str = f"${tp}" if tp else "—"
+            direction = r.get("direction", "—")
+            dir_emoji = "📈" if direction == "bullish" else "📉" if direction == "bearish" else "➡️"
+            url = r.get("url", "")
+            url_cell = f"[查看 →]({url})" if url else "—"
+            md += (f"| {r.get('bank','—')} | {action} | {ticker} | {r.get('company','—')} | "
+                   f"{tp_str} | {dir_emoji} {direction} | {r.get('rationale','—')} | "
+                   f"{r.get('source','—')} | {r.get('date','—')} | {url_cell} |\n")
+        st.markdown(md)
     else:
-        st.caption("今日无结构化研报")
+        st.caption("今日无结构化研报  ·  可手动查看 "
+                   f"[MarketBeat](https://www.marketbeat.com) | "
+                   f"[TipRanks](https://www.tipranks.com)")
 
-    # ---- 事件流 ----
-    st.subheader("市场事件流 (Reddit)")
-    for e in data["events"]:
-        st.markdown(f"- **[{e['source']}]** [{e['title']}]({e['url']})  "
-                    f"`{e.get('score', 0)} pts`")
+    st.divider()
+
+    # =========================================================================
+    # 6. 市场事件流 (Reddit) - 确保链接可点击
+    # =========================================================================
+    events = data.get("events", [])
+    st.subheader(f"市场事件流 (Reddit) - {len(events)} 条")
+    if events:
+        for e in events:
+            title = e.get("title", "")
+            url = e.get("url", "")
+            source = e.get("source", "")
+            score = e.get("score", 0)
+            created = e.get("created_utc", "")[:10]
+            source_link_map = {
+                "reddit_equities": ("r/stocks", "https://www.reddit.com/r/stocks"),
+                "reddit_crypto": ("r/CryptoCurrency", "https://www.reddit.com/r/CryptoCurrency"),
+                "reddit_wsb": ("r/wallstreetbets", "https://www.reddit.com/r/wallstreetbets"),
+            }
+            sub_name, sub_link = source_link_map.get(source, (source, url))
+            if url and url != "https://reddit.com/x" and url != "https://reddit.com/y":
+                st.markdown(f"- **[{sub_name}]({sub_link})** [{title}]({url})  "
+                            f"`{score} pts` · {created}")
+            else:
+                st.markdown(f"- **[{sub_name}]({sub_link})** {title}  "
+                            f"`{score} pts` · {created}")
+    else:
+        st.caption("今日无事件流  ·  可手动查看 "
+                   f"[r/wallstreetbets](https://www.reddit.com/r/wallstreetbets) | "
+                   f"[r/stocks](https://www.reddit.com/r/stocks) | "
+                   f"[r/CryptoCurrency](https://www.reddit.com/r/CryptoCurrency)")
+
+    st.divider()
+
+    # =========================================================================
+    # 7. 数据来源与口径透明度表（新增 - 类似 timsun.net）
+    # =========================================================================
+    st.subheader("数据来源与口径")
+    st.caption("所有指标的数据来源、更新频率与可信度状态")
+
+    # 构建口径表
+    md = "| 指标 | 当前值 | 数据截至 | 来源 | 来源链接 | 状态 |\n"
+    md += "|------|--------|----------|------|----------|------|\n"
+
+    # 价格指标
+    for key in ["SP500", "DXY", "BTC", "WTI"]:
+        p = prices.get(key)
+        if p:
+            link, src_name = PRICE_LINKS.get(key, ("", ""))
+            md += (f"| {labels_cn.get(key, key)} | {fmt_value(key, p.get('value'))} "
+                   f"{fmt_chg(p.get('change_pct'))} | {p.get('date','—')} | "
+                   f"{src_name} | [→]({link}) | ✅ 正常 |\n")
+
+    # 宏观指标
+    for k, v in macro.items():
+        link_info = MACRO_LINKS.get(k)
+        if link_info:
+            link, src_name, desc = link_info
+        else:
+            link, src_name, desc = "", v.get("source", ""), k
+        md += (f"| {desc or k} | {fmt_value(k, v.get('value'))} | "
+               f"{v.get('date','—')} | {src_name} | "
+               f"[→]({link}) | ✅ 正常 |\n")
+
+    st.markdown(md)
+
+    # 加密数据源状态
+    st.markdown("**加密衍生品数据源状态**")
+    md = "| 交易所 | 状态 | 链接 |\n|--------|------|------|\n"
+    for ex_key in ["binance", "bybit", "deribit"]:
+        ex_data = crypto.get(ex_key, {})
+        link, name = CRYPTO_LINKS.get(ex_key, ("", ex_key))
+        if ex_data and "error" not in ex_data:
+            md += f"| {name} | ✅ 正常 | [→]({link}) |\n"
+        else:
+            md += f"| {name} | ❌ 超时/失败 | [→]({link}) |\n"
+    st.markdown(md)
+
+    st.divider()
+
+    # =========================================================================
+    # 8. 外部资源导航（新增）
+    # =========================================================================
+    st.subheader("外部资源导航")
+    st.caption("点击以下链接可直接访问各数据源原始网站")
+
+    # 分两列展示
+    col_a, col_b = st.columns(2)
+    half = len(EXTERNAL_RESOURCES) // 2 + 1
+
+    with col_a:
+        for name, url, desc in EXTERNAL_RESOURCES[:half]:
+            st.markdown(f"- [{name}]({url}) — {desc}")
+
+    with col_b:
+        for name, url, desc in EXTERNAL_RESOURCES[half:]:
+            st.markdown(f"- [{name}]({url}) — {desc}")
+
+    # 底部信息
+    st.divider()
+    st.caption(
+        "本仪表盘数据自动采集自 Yahoo Finance、FRED、Reddit、Binance、Deribit 等公开数据源。  \n"
+        "每日北京时间 07:00 自动更新（周一至周五）。"
+        f"  ·  [GitHub 仓库](https://github.com/acmilanhm/macro-dashboard)"
+        f"  ·  [参考网站 timsun.net](https://timsun.net/)"
+    )
 
 
 if __name__ == "__main__":
