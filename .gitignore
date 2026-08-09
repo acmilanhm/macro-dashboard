@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.DS_Store
+*.log
+.streamlit/secrets.toml
+# 注意：daily_macro.json 需要提交（Streamlit Cloud 读取它），不要忽略
